@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using NAudio.Wave;
 using System.IO;
+using System.Diagnostics;
 
 namespace SimpleClock
 {
@@ -20,10 +21,14 @@ namespace SimpleClock
 
             comboboxInitialzation();
             timerClock.Start();
+            txtStopWatch.Text = "00:00:00:000";
         }
 
         List<string> hours = new List<string>();
         List<string> minutes = new List<string>();
+
+        List<string> StopWatchLog = new List<string>();
+        Stopwatch sw = new Stopwatch();
 
         private string strSelectTime;
         private WaveOutEvent waveOut;
@@ -95,6 +100,62 @@ namespace SimpleClock
             timerAlert.Stop();
             btnSetAlert.Enabled = true;
             btnCancelAlert.Enabled = false;
+        }
+
+        private void timerStopWatch_Tick(object sender, EventArgs e)
+        {
+            txtStopWatch.Text = sw.Elapsed.ToString("hh':'mm':'ss':'fff");
+        }
+
+        private void btnStart_Click(object sender, EventArgs e)
+        {
+            sw.Start();
+            timerStopWatch.Start();
+        }
+
+        private void btnPause_Click(object sender, EventArgs e)
+        {
+            sw.Stop();
+            timerStopWatch.Stop();  
+        }
+
+        private void btnStop_Click(object sender, EventArgs e)
+        {
+            sw.Reset();
+            timerStopWatch.Stop();    
+            txtStopWatch.Text = "00:00:00:000";
+            listStopWatchLog.Items.Clear();
+            StopWatchLog.Clear();
+        }
+        private void btnReset_Click(object sender, EventArgs e)
+        {
+            if (sw.IsRunning)
+            {
+                logRecord();
+                sw.Restart();
+            }
+            else
+            {
+                sw.Reset();
+                txtStopWatch.Text = "00:00:00:000";
+            }
+        }
+        private void btnLog_Click(object sender, EventArgs e)
+        {
+            logRecord();
+        }
+
+        private void logRecord()
+        {
+            listStopWatchLog.Items.Clear();
+            StopWatchLog.Add(txtStopWatch.Text);
+
+            int i = StopWatchLog.Count;
+            while (i > 0)
+            {
+                listStopWatchLog.Items.Add(String.Format("第 {0} 筆紀錄：{1}", i.ToString(), StopWatchLog[i - 1] + "\n"));
+                i--;
+            }
         }
     }
 }
