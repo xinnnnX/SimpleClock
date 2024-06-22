@@ -22,6 +22,7 @@ namespace SimpleClock
             comboboxInitialzation();
             timerClock.Start();
             txtStopWatch.Text = "00:00:00:000";
+            txtCountDown.Text = "00:00:00";
         }
 
         List<string> hours = new List<string>();
@@ -33,6 +34,9 @@ namespace SimpleClock
         private string strSelectTime;
         private WaveOutEvent waveOut;
         private AudioFileReader audioFileReader;
+
+        bool isCountDownReset = true;
+        TimeSpan ts;
         private void timerAlert_Tick(object sender, EventArgs e)
         {
             if (strSelectTime == DateTime.Now.ToString("HH:mm"))
@@ -72,12 +76,24 @@ namespace SimpleClock
         private void comboboxInitialzation()
         {
             for (int i = 0; i <= 23; i++)
+            {
                 cmbHour.Items.Add(string.Format("{0:00}", i));
-            cmbHour.SelectedIndex = 0;
+                cmbCountHour.Items.Add(string.Format("{0:00}", i));
+            }
+
 
             for (int i = 0; i <= 59; i++)
+            {
                 cmbMin.Items.Add(string.Format("{0:00}", i));
+                cmbCountMin.Items.Add(string.Format("{0:00}", i));
+                cmbCountSecond.Items.Add(string.Format("{0:00}", i));
+            }
+
+            cmbHour.SelectedIndex = 0;
             cmbMin.SelectedIndex = 0;
+            cmbCountHour.SelectedIndex = 0;
+            cmbCountMin.SelectedIndex = 0;
+            cmbCountSecond.SelectedIndex = 0;
         }
         private void timerClock_Tick(object sender, EventArgs e)
         {
@@ -156,6 +172,66 @@ namespace SimpleClock
                 listStopWatchLog.Items.Add(String.Format("第 {0} 筆紀錄：{1}", i.ToString(), StopWatchLog[i - 1] + "\n"));
                 i--;
             }
+        }
+
+        private void timerCountDown_Tick(object sender, EventArgs e)
+        {
+            txtCountDown.Text = ts.ToString("hh':'mm':'ss");
+            ts = ts.Subtract(TimeSpan.FromSeconds(1));
+
+            if (txtCountDown.Text == "00:00:00")
+            {
+                try
+                {
+                    stopWaveOut();
+
+                    string audioFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "alert.wav");
+
+                    audioFileReader = new AudioFileReader(audioFilePath);
+
+                    waveOut = new WaveOutEvent();
+                    waveOut.Init(audioFileReader);
+
+                    waveOut.Play();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("無法播放聲音檔，錯誤資訊: " + ex.Message);
+                }
+                finally
+                {
+                    timerCountDown.Stop();
+                }
+            }
+        }
+
+        private void btnCountStart_Click(object sender, EventArgs e)
+        {
+            if (isCountDownReset == true)
+            {
+                int Hour = int.Parse(cmbCountHour.SelectedItem.ToString());
+                int Min = int.Parse(cmbCountMin.SelectedItem.ToString());
+                int Sec = int.Parse(cmbCountSecond.SelectedItem.ToString());
+                ts = new TimeSpan(Hour, Min, Sec); 
+            }
+            isCountDownReset = false;
+            timerCountDown.Start();
+        }
+
+        private void btnCountPause_Click(object sender, EventArgs e)
+        {
+            timerCountDown.Stop();
+        }
+
+        private void btnCountStop_Click(object sender, EventArgs e)
+        {
+            stopWaveOut();
+            isCountDownReset = true;
+            timerCountDown.Stop();
+            txtCountDown.Text = "00:00:00";
+            cmbCountHour.SelectedIndex = 0;
+            cmbCountMin.SelectedIndex = 0;
+            cmbCountSecond.SelectedIndex = 0;
         }
     }
 }
